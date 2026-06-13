@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>DC Fountains and Statues Map — Clean Editorial Demo</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  html, body { margin:0; height:100%; font-family: Georgia, 'Times New Roman', serif; background:#eef0ef; }
+  #map { position:absolute; inset:0; }
+  .panel {
+    position:absolute; top:22px; left:22px; z-index:2; width:330px;
+    background:rgba(232,232,228,.96); color:#181818;
+    border:1px solid rgba(78,78,72,.22); border-radius:3px;
+    padding:18px 18px 16px; box-shadow:0 10px 30px rgba(45,45,40,.16);
+  }
+  .kicker { font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:.11em; text-transform:uppercase; color:#6e6a62; margin-bottom:7px; }
+  h1 { font-size:23px; line-height:1.1; margin:0 0 9px; font-weight:600; }
+  .panel p { font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.45; margin:0 0 14px; color:#4f4f4a; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#302f2b; margin-bottom:12px; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:5px; box-shadow:0 0 0 1px #fff, 0 0 0 2px rgba(0,0,0,.2); }
+  .blue { background:#0086e6; } .gold { background:#f0a91f; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; }
+  button {
+    font-family:Arial, Helvetica, sans-serif; background:rgba(255,255,255,.48); color:#252521;
+    border:1px solid rgba(60,60,55,.24); border-radius:999px; padding:7px 12px;
+    font-size:12px; cursor:pointer; line-height:1;
+  }
+  button:hover { background:rgba(255,255,255,.78); }
+  button.active { background:#20201d; color:#fff; border-color:#20201d; }
+.maplibregl-popup-content { padding:0; border-radius:0; overflow:hidden; max-width:330px; box-shadow:0 12px 30px rgba(40,32,20,.25); }
+  .popup { background:#fbf8f0; color:#181818; }
+  .popup img { width:100%; height:170px; object-fit:cover; display:block; background:#ddd; filter:saturate(.85); }
+  .popup .content { padding:12px 14px 14px; }
+  .popup h2 { font-size:18px; line-height:1.14; margin:0 0 5px; font-weight:600; }
+  .popup .tag { font-family:Arial, Helvetica, sans-serif; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#7c705d; }
+  .popup p { font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.45; color:#403b33; margin:8px 0 0; }
+  .maplibregl-popup-close-button { font-size:20px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); }
+
+  .locator {
+    position:absolute; left:22px; bottom:22px; z-index:2; width:230px;
+    background:rgba(232,232,228,.94); border:1px solid rgba(78,78,72,.22);
+    box-shadow:0 8px 24px rgba(45,45,40,.14); padding:12px;
+  }
+  .locator img { width:100%; height:auto; display:block; }
+
+  @media(max-width:680px) {
+    .panel {
+    position:absolute; top:22px; left:22px; z-index:2; width:330px;
+    background:rgba(232,232,228,.96); color:#181818;
+    border:1px solid rgba(78,78,72,.22); border-radius:3px;
+    padding:18px 18px 16px; box-shadow:0 10px 30px rgba(45,45,40,.16);
+  }
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <div class="kicker">Washington, D.C.</div>
+  <h1>Fountains and Statues</h1>
+  <p>Explore the fountains and statues restored across Washington, D.C.</p>
+  <div class="legend">
+    <span><i class="dot blue"></i>Fountains</span>
+    <span><i class="dot gold"></i>Statues / memorials</span>
+  </div>
+  <div class="controls">
+    <button id="all" class="active">All</button>
+    <button id="fountains">Fountains</button>
+    <button id="statues">Statues</button>
+    
+  </div>
+</div>
+<div class="locator"><img src="dc_locator_transparent.png" alt="United States locator map showing Washington, D.C."></div>
+
+<script>
+const places = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "American Veterans Disabled for Life", "category": "Fountain", "description": "Placeholder text for American Veterans Disabled for Life. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/706/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0106, 38.8869]}}, {"type": "Feature", "properties": {"name": "Bolivar Memorial Park Fountain", "category": "Fountain", "description": "Placeholder text for Bolivar Memorial Park Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/913/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.037, 38.909]}}, {"type": "Feature", "properties": {"name": "Columbus Circle Fountain", "category": "Fountain", "description": "Placeholder text for Columbus Circle Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/171/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0064, 38.8969]}}, {"type": "Feature", "properties": {"name": "Dupont Circle Fountain", "category": "Fountain", "description": "Placeholder text for Dupont Circle Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/906/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0434, 38.9096]}}, {"type": "Feature", "properties": {"name": "FDR Memorial Fountains", "category": "Fountain", "description": "Placeholder text for FDR Memorial Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/222/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0435, 38.8833]}}, {"type": "Feature", "properties": {"name": "Freedom Plaza", "category": "Fountain", "description": "Placeholder text for Freedom Plaza. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/406/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.031, 38.8951]}}, {"type": "Feature", "properties": {"name": "General Phillip Sheridan Fountain", "category": "Fountain", "description": "Placeholder text for General Phillip Sheridan Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/942/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0458, 38.9127]}}, {"type": "Feature", "properties": {"name": "George Mason Memorial Fountain", "category": "Fountain", "description": "Placeholder text for George Mason Memorial Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/290/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0406, 38.8795]}}, {"type": "Feature", "properties": {"name": "National Japanese American Memorial Fountain", "category": "Fountain", "description": "Placeholder text for National Japanese American Memorial Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/700/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0106, 38.8964]}}, {"type": "Feature", "properties": {"name": "John Marshall Park Fountain", "category": "Fountain", "description": "Placeholder text for John Marshall Park Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/288/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0195, 38.8945]}}, {"type": "Feature", "properties": {"name": "John Paul Jones Fountain", "category": "Fountain", "description": "Placeholder text for John Paul Jones Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/11/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.045, 38.894]}}, {"type": "Feature", "properties": {"name": "Kahil Gibran Memorial Fountains", "category": "Fountain", "description": "Placeholder text for Kahil Gibran Memorial Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/638/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0497, 38.9191]}}, {"type": "Feature", "properties": {"name": "Korean War Veterans Memorial Fountain", "category": "Fountain", "description": "Placeholder text for Korean War Veterans Memorial Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/661/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0478, 38.8878]}}, {"type": "Feature", "properties": {"name": "Lafayette Park Fountains", "category": "Fountain", "description": "Placeholder text for Lafayette Park Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/76/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0365, 38.9007]}}, {"type": "Feature", "properties": {"name": "Meridian Hill Fountains", "category": "Fountain", "description": "Placeholder text for Meridian Hill Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/824/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0353, 38.9223]}}, {"type": "Feature", "properties": {"name": "MLK Jr. Memorial Fountains", "category": "Fountain", "description": "Placeholder text for MLK Jr. Memorial Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/6/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0442, 38.8862]}}, {"type": "Feature", "properties": {"name": "National Law Enforcement Memorial", "category": "Fountain", "description": "Placeholder text for National Law Enforcement Memorial. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/264/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.02, 38.8956]}}, {"type": "Feature", "properties": {"name": "Rawlins Park", "category": "Fountain", "description": "Placeholder text for Rawlins Park. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/281/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0516, 38.8955]}}, {"type": "Feature", "properties": {"name": "Taras Shevchenko Memorial Park Fountain", "category": "Fountain", "description": "Placeholder text for Taras Shevchenko Memorial Park Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/416/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0485, 38.9149]}}, {"type": "Feature", "properties": {"name": "Theodore Roosevelt Memorial Moats and Fountains", "category": "Fountain", "description": "Placeholder text for Theodore Roosevelt Memorial Moats and Fountains. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/2/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.062, 38.8962]}}, {"type": "Feature", "properties": {"name": "US Navy Memorial Fountain", "category": "Fountain", "description": "Placeholder text for US Navy Memorial Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/869/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.023, 38.8932]}}, {"type": "Feature", "properties": {"name": "World War II Memorial Fountain", "category": "Fountain", "description": "Placeholder text for World War II Memorial Fountain. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/889/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0405, 38.8894]}}, {"type": "Feature", "properties": {"name": "Captain John Paul Jones Statue", "category": "Statue", "description": "Placeholder text for Captain John Paul Jones Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/554/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.045, 38.894]}}, {"type": "Feature", "properties": {"name": "Dante in Meridian Hill", "category": "Statue", "description": "Placeholder text for Dante in Meridian Hill. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/278/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0356, 38.922]}}, {"type": "Feature", "properties": {"name": "Edmund Burke Statue", "category": "Statue", "description": "Placeholder text for Edmund Burke Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/626/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0422, 38.9013]}}, {"type": "Feature", "properties": {"name": "James Buchanan in Meridian Hill", "category": "Statue", "description": "Placeholder text for James Buchanan in Meridian Hill. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/920/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0351, 38.9226]}}, {"type": "Feature", "properties": {"name": "George Mason Statue", "category": "Statue", "description": "Placeholder text for George Mason Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/151/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0407, 38.8795]}}, {"type": "Feature", "properties": {"name": "Nathaniel Greene Statue", "category": "Statue", "description": "Placeholder text for Nathaniel Greene Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/886/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0298, 38.896]}}, {"type": "Feature", "properties": {"name": "John Ericsson Monument", "category": "Statue", "description": "Placeholder text for John Ericsson Monument. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/559/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0518, 38.887]}}, {"type": "Feature", "properties": {"name": "John Marshall Statue in John Marshall Park", "category": "Statue", "description": "Placeholder text for John Marshall Statue in John Marshall Park. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/264/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0195, 38.8945]}}, {"type": "Feature", "properties": {"name": "Casimir Pulaski in Freedom Plaza", "category": "Statue", "description": "Placeholder text for Casimir Pulaski in Freedom Plaza. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/881/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.031, 38.8954]}}, {"type": "Feature", "properties": {"name": "Two Chess Players in John Marshall Park", "category": "Statue", "description": "Placeholder text for Two Chess Players in John Marshall Park. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/241/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0197, 38.8944]}}, {"type": "Feature", "properties": {"name": "John Witherspoon Statue", "category": "Statue", "description": "Placeholder text for John Witherspoon Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/727/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0394, 38.9101]}}, {"type": "Feature", "properties": {"name": "Theodore Roosevelt Statue and Monuments", "category": "Statue", "description": "Placeholder text for Theodore Roosevelt Statue and Monuments. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/357/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.062, 38.8965]}}, {"type": "Feature", "properties": {"name": "Rawlins in Rawlins Park", "category": "Statue", "description": "Placeholder text for Rawlins in Rawlins Park. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/435/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0516, 38.8956]}}, {"type": "Feature", "properties": {"name": "United Spanish War Veterans Memorial (“The Hiker”)", "category": "Statue", "description": "Placeholder text for United Spanish War Veterans Memorial (“The Hiker”). Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/300/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.034, 38.8964]}}, {"type": "Feature", "properties": {"name": "Thomas Jefferson at Memorial", "category": "Statue", "description": "Placeholder text for Thomas Jefferson at Memorial. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/820/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0365, 38.8814]}}, {"type": "Feature", "properties": {"name": "The Seabees Statues", "category": "Statue", "description": "Placeholder text for The Seabees Statues. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/385/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0689, 38.8847]}}, {"type": "Feature", "properties": {"name": "Bolivar Equestrian in Bolivar Park", "category": "Statue", "description": "Placeholder text for Bolivar Equestrian in Bolivar Park. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/27/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.037, 38.9089]}}, {"type": "Feature", "properties": {"name": "Sheridan Statue", "category": "Statue", "description": "Placeholder text for Sheridan Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/902/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0459, 38.9128]}}, {"type": "Feature", "properties": {"name": "Joan of Arc in Meridian Hill", "category": "Statue", "description": "Placeholder text for Joan of Arc in Meridian Hill. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/244/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0353, 38.9232]}}, {"type": "Feature", "properties": {"name": "General John Logan Statue", "category": "Statue", "description": "Placeholder text for General John Logan Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/821/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0353, 38.9072]}}, {"type": "Feature", "properties": {"name": "Caesar Rodney", "category": "Statue", "description": "Placeholder text for Caesar Rodney. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/703/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0345, 38.8969]}}, {"type": "Feature", "properties": {"name": "Commodore John Barry Statue", "category": "Statue", "description": "Placeholder text for Commodore John Barry Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/740/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0396, 38.8974]}}, {"type": "Feature", "properties": {"name": "Hamilton (Commerce)", "category": "Statue", "description": "Placeholder text for Hamilton (Commerce). Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/312/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0186, 38.8947]}}, {"type": "Feature", "properties": {"name": "Bernardo de Galvez Statue", "category": "Statue", "description": "Placeholder text for Bernardo de Galvez Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/842/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0399, 38.9012]}}, {"type": "Feature", "properties": {"name": "George Washington at Washington Circle", "category": "Statue", "description": "Placeholder text for George Washington at Washington Circle. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/555/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.049, 38.9024]}}, {"type": "Feature", "properties": {"name": "Lincoln Statue in Lincoln Memorial", "category": "Statue", "description": "Placeholder text for Lincoln Statue in Lincoln Memorial. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/366/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0502, 38.8893]}}, {"type": "Feature", "properties": {"name": "George Washington (Rose Garden)", "category": "Statue", "description": "Placeholder text for George Washington (Rose Garden). Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/175/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0365, 38.8977]}}, {"type": "Feature", "properties": {"name": "Taras Shevchenko Statue", "category": "Statue", "description": "Placeholder text for Taras Shevchenko Statue. Replace with verified restoration details, dates, and source notes.", "image": "https://picsum.photos/seed/187/480/270"}, "geometry": {"type": "Point", "coordinates": [-77.0486, 38.9149]}}]};
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/positron',
+  center: [-77.0369, 38.9007],
+  zoom: 12.45,
+  pitch: 0,
+  bearing: 0
+});
+
+map.addControl(new maplibregl.NavigationControl({visualizePitch:false}), 'top-right');
+
+map.on('load', () => {
+  map.addSource('places', { type:'geojson', data: places });
+
+  map.addLayer({
+    id:'places-halo',
+    type:'circle',
+    source:'places',
+    paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],10,7,15,14],
+      'circle-color':'#ffffff',
+      'circle-opacity':0.86
+    }
+  });
+
+  map.addLayer({
+    id:'places-circle',
+    type:'circle',
+    source:'places',
+    paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],10,4.2,15,8.5],
+      'circle-color':['match',['get','category'],'Fountain','#0086e6','#f0a91f'],
+      'circle-stroke-color':'#312a20',
+      'circle-stroke-width':0.7,
+      'circle-opacity':0.98
+    }
+  });
+
+  map.addLayer({
+    id:'places-label',
+    type:'symbol',
+    source:'places',
+    minzoom:14.2,
+    layout:{
+      'text-field':['get','name'],
+      'text-font':['Noto Sans Regular'],
+      'text-size':11,
+      'text-offset':[0,1.25],
+      'text-anchor':'top',
+      'text-variable-anchor':['top','bottom','left','right']
+    },
+    paint:{
+      'text-color':'#25211b',
+      'text-halo-color':'#faf7ef',
+      'text-halo-width':1.4
+    }
+  });
+
+  map.on('click','places-circle',(e)=>{
+    const f=e.features[0], p=f.properties, coords=f.geometry.coordinates.slice();
+    new maplibregl.Popup({offset:16})
+      .setLngLat(coords)
+      .setHTML(`<div class="popup">
+        <img src="${p.image}" alt="">
+        <div class="content">
+          <h2>${p.name}</h2>
+          <span class="tag">${p.category}</span>
+          <p>${p.description}</p>
+        </div>
+      </div>`)
+      .addTo(map);
+  });
+
+  map.on('mouseenter','places-circle',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','places-circle',()=>map.getCanvas().style.cursor='');
+
+  function filter(type) {
+    document.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    document.getElementById(type).classList.add('active');
+    if(type === 'all' || type === 'mall') {
+      map.setFilter('places-halo', null);
+      map.setFilter('places-circle', null);
+      map.setFilter('places-label', null);
+    } else {
+      const cat = type === 'fountains' ? 'Fountain' : 'Statue';
+      const expr = ['==', ['get','category'], cat];
+      map.setFilter('places-halo', expr);
+      map.setFilter('places-circle', expr);
+      map.setFilter('places-label', expr);
+    }
+  }
+
+  document.getElementById('all').onclick=()=>{ filter('all'); map.flyTo({center:[-77.0369,38.9007], zoom:12.45, duration:1100}); };
+  document.getElementById('fountains').onclick=()=>filter('fountains');
+  document.getElementById('statues').onclick=()=>filter('statues');
+  
+});
+</script>
+</body>
+</html>
