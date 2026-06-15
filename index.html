@@ -108,7 +108,8 @@ const map = new maplibregl.Map({
   center: [-77.0369, 38.9007],
   zoom: 12.45,
   pitch: 0,
-  bearing: 0
+  bearing: 0,
+  scrollZoom: false
 });
 
 map.addControl(new maplibregl.NavigationControl({visualizePitch:false}), 'top-right');
