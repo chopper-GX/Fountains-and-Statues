@@ -126,7 +126,8 @@ const map = new maplibregl.Map({
   zoom: 12.45,
   pitch: 0,
   bearing: 0,
-  scrollZoom: false
+  scrollZoom: false,
+  cooperativeGestures: true
 });
 map.addControl(new maplibregl.NavigationControl({visualizePitch:false}), 'top-right');
 
